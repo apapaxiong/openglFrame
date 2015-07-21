@@ -9,7 +9,17 @@ class Mesh
 public:
 	Mesh(){};
 	bool LoadModel(char* path,char* texfilename,int texid);
-	void RenderFP();
+	//----------Initialization-----------//
+	void GenerateEdgeList(); //Generate edge list of the mesh, no duplication
+	void GenerateFixedConstraint(); //Generate fixed constraint
+	//-------------Render---------------//
+	void RenderFP();  //Render Fixed Render Pipeline
+	void Render();  
+	//-----------Debug Function----------//
+	void Degbug_Render();
+	void Debug_Render_EdgeList();
+	void Debug_Render_FixedVertex();
+
 	~Mesh(){};
 private:
 	GLMmodel* obj;
@@ -26,12 +36,18 @@ private:
 	vector<VertexPoint> m_pointCloud;
 	vector<VertexPoint> m_meshData;
 
+	vector<VertexPoint> m_pointCloud_ori;
+	vector<bool> m_pointFixed;
+
 	vector<glm_vector3> m_vertex;
 	vector<glm_vector3> m_vertexNormal;
 	vector<glm_vector2> m_vertexTexcoord;
 	vector<unsigned int> m_vertexIndex;
 	vector<unsigned int> m_normalIndex;
 	vector<unsigned int> m_texcoordIndex;
+
+
+	vector<EdgeList> m_edgelist;
 };
 
 #endif 

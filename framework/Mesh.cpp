@@ -1,5 +1,10 @@
 #include "Mesh.h"
-
+extern bool g_show_wireframe;
+extern bool g_show_edgelist;
+extern float g_linewidth;
+extern bool g_show_render;
+extern float g_pointsize;
+extern bool g_show_fixedvertex;
 bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 {
 	if (!obj)
@@ -16,6 +21,9 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 		glmFacetNormals(obj);
 		glmVertexNormals(obj, 90.0);
 	}
+	m_vertices_number=obj->numvertices;
+	m_system_dimension=3*obj->numvertices;
+
 	m_vertex.resize(obj->numvertices);
 	memcpy(&m_vertex[0],obj->vertices+3,(obj->numvertices)*sizeof(float)*3);
 	//cout<<vertexCache[id][objmodel->numvertices].x<<endl;
@@ -23,6 +31,7 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 	memcpy(&m_vertexNormal[0],obj->normals+3,obj->numnormals*sizeof(float)*3);
 	m_vertexTexcoord.resize(obj->numtexcoords);
 	memcpy(&m_vertexTexcoord[0],obj->texcoords+2,obj->numtexcoords*sizeof(float)*2);
+
 	for(int i=0;i<obj->numtriangles;i++)
 	{
 		m_vertexIndex.push_back(obj->triangles[i].vindices[0]);
@@ -86,6 +95,18 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 
 		m_meshData.push_back(temp);	
 	}
+	m_pointCloud_ori.resize(m_pointCloud.size());
+	m_pointFixed.resize(m_pointCloud.size());
+	for(int i=0;i<m_pointCloud.size();i++)
+	{
+		m_pointCloud_ori[i]=m_pointCloud[i];
+	}
+
+	cout<<"Mesh Loading Finished"<<endl;
+	cout<<"Number of Vertices: "<<m_pointCloud.size()<<endl;
+	cout<<"Number of Faces: "<<m_vertexIndex.size()/3<<endl;
+	GenerateEdgeList();
+	GenerateFixedConstraint();
 //	glActiveTexture(GL_TEXTURE1);
 //	LoadTexture(skinnormal);
 //	glActiveTexture(GL_TEXTURE5);
@@ -103,6 +124,78 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 //	CreateNeighborFaceNew();
 //	return true;
 }
+void Mesh::GenerateFixedConstraint()
+{
+	for(int i=0;i<m_pointCloud.size();i++)
+	{
+		m_pointFixed[i]=false;
+	}
+	for(int i=0;i<m_vertexIndex.size()-2;i+=3)
+	{
+		int id1=m_vertexIndex[i]-1;
+		int id2=m_vertexIndex[i+1]-1;
+		int id3=m_vertexIndex[i+2]-1;
+		int count=0;
+		for(int j=0;j<m_vertexIndex.size()-2;j+=3)
+		{
+			if(i!=j)
+			{
+				if((id1==m_vertexIndex[j]-1&&id2==m_vertexIndex[j+1]-1)||(id1==m_vertexIndex[j+1]-1&&id2==m_vertexIndex[j]-1)||
+					(id1==m_vertexIndex[j+1]-1&&id2==m_vertexIndex[j+2]-1)||(id1==m_vertexIndex[j+2]-1&&id2==m_vertexIndex[j+1]-1)||
+					(id1==m_vertexIndex[j]-1&&id2==m_vertexIndex[j+2]-1)||(id1==m_vertexIndex[j+2]-1&&id2==m_vertexIndex[j]-1)
+					)
+					count++;
+			}
+		}
+		if(0==count)
+		{
+			m_pointFixed[id1]=1;
+			m_pointFixed[id2]=1;
+		}
+		count=0;
+		for(int j=0;j<m_vertexIndex.size()-2;j+=3)
+		{
+			if(i!=j)
+			{
+				if((id1==m_vertexIndex[j]-1&&id3==m_vertexIndex[j+1]-1)||(id1==m_vertexIndex[j+1]-1&&id3==m_vertexIndex[j]-1)||
+					(id1==m_vertexIndex[j+1]-1&&id3==m_vertexIndex[j+2]-1)||(id1==m_vertexIndex[j+2]-1&&id3==m_vertexIndex[j+1]-1)||
+					(id1==m_vertexIndex[j]-1&&id3==m_vertexIndex[j+2]-1)||(id1==m_vertexIndex[j+2]-1&&id3==m_vertexIndex[j]-1)
+					)
+					count++;
+			}
+		}
+		if(0==count)
+		{
+			m_pointFixed[id1]=1;
+			m_pointFixed[id3]=1;
+		}
+		count=0;
+		for(int j=0;j<m_vertexIndex.size()-2;j+=3)
+		{
+			if(i!=j)
+			{
+				if((id2==m_vertexIndex[j]-1&&id3==m_vertexIndex[j+1]-1)||(id2==m_vertexIndex[j+1]-1&&id3==m_vertexIndex[j]-1)||
+					(id2==m_vertexIndex[j+1]-1&&id3==m_vertexIndex[j+2]-1)||(id2==m_vertexIndex[j+2]-1&&id3==m_vertexIndex[j+1]-1)||
+					(id2==m_vertexIndex[j]-1&&id3==m_vertexIndex[j+2]-1)||(id2==m_vertexIndex[j+2]-1&&id3==m_vertexIndex[j]-1)
+					)
+					count++;
+			}
+		}
+		if(0==count)
+		{
+			m_pointFixed[id2]=1;
+			m_pointFixed[id3]=1;
+		}
+
+	}
+}
+void Mesh::Render()
+{
+	if(g_show_render)
+		RenderFP();
+
+	Degbug_Render();
+}
 void Mesh::RenderFP()
 {
 	glBegin(GL_TRIANGLES);
@@ -116,6 +209,108 @@ void Mesh::RenderFP()
 
 		glNormal3f(m_meshData[i+2].nor.x,m_meshData[i+2].nor.y,m_meshData[i+2].nor.z);
 		glVertex3f(m_meshData[i+2].v.x, m_meshData[i+2].v.y, m_meshData[i+2].v.z);
+	}
+	glEnd();
+}
+void Mesh::GenerateEdgeList()
+{
+	for(int i=0;i<m_vertexIndex.size()-2;i+=3)
+		{
+			int idx1=m_vertexIndex[i]-1;
+			int idx2=m_vertexIndex[i+1]-1;
+			int idx3=m_vertexIndex[i+2]-1;
+			glm::vec3 avernor=(m_pointCloud[idx1].nor+m_pointCloud[idx2].nor+m_pointCloud[idx3].nor)/3.0f;
+			glm::vec3 averver=(m_pointCloud[idx1].v+m_pointCloud[idx2].v+m_pointCloud[idx3].v)/3.0f;
+			
+			bool exist=false;
+			for(int j=0;j<m_edgelist.size();j++)
+			{
+				if(m_edgelist[j].pa==idx1&&m_edgelist[j].pb==idx2||m_edgelist[j].pa==idx2&&m_edgelist[j].pb==idx1)
+				{
+					exist=true;
+					break;
+				}
+			}
+			if(exist==false)
+			{
+				EdgeList tempedge;
+				tempedge.pa=idx1;
+				tempedge.pb=idx2;
+				m_edgelist.push_back(tempedge);
+			}
+		    exist=false;
+			for(int j=0;j<m_edgelist.size();j++)
+			{
+				if(m_edgelist[j].pa==idx1&&m_edgelist[j].pb==idx3||m_edgelist[j].pa==idx3&&m_edgelist[j].pb==idx1)
+				{
+					exist=true;
+					break;
+				}
+			}
+			if(exist==false)
+			{
+				EdgeList tempedge;
+				tempedge.pa=idx1;
+				tempedge.pb=idx3;
+				m_edgelist.push_back(tempedge);
+			}
+			 exist=false;
+			for(int j=0;j<m_edgelist.size();j++)
+			{
+				if(m_edgelist[j].pa==idx2&&m_edgelist[j].pb==idx3||m_edgelist[j].pa==idx3&&m_edgelist[j].pb==idx2)
+				{
+					exist=true;
+					break;
+				}
+			}
+			if(exist==false)
+			{
+				EdgeList tempedge;
+				tempedge.pa=idx2;
+				tempedge.pb=idx3;
+				m_edgelist.push_back(tempedge);
+			}
+		}
+	cout<<"Edge List Generation Finished: "<<m_edgelist.size()<<endl;
+}
+
+void Mesh::Debug_Render_EdgeList()
+{
+	glBegin(GL_LINES);
+	for(int i=0;i<m_edgelist.size();i++)
+	{
+		int idx1=m_edgelist[i].pa;
+		int idx2=m_edgelist[i].pb;
+		glm::vec3 v1=m_pointCloud[idx1].v;
+		glm::vec3 v2=m_pointCloud[idx2].v;
+
+		glVertex3f(v1.x,v1.y,v1.z);
+		glVertex3f(v2.x,v2.y,v2.z);
+	}
+	glEnd();
+}
+void Mesh::Degbug_Render()
+{
+	glLineWidth(g_linewidth);
+	if(g_show_edgelist)
+	{
+	    Debug_Render_EdgeList();
+	}
+	if(g_show_fixedvertex)
+	{
+		Debug_Render_FixedVertex();
+	}
+}
+void Mesh::Debug_Render_FixedVertex()
+{
+	glPointSize(g_pointsize);
+	glBegin(GL_POINTS);
+	for(int i=0;i<m_pointFixed.size();i++)
+	{
+		if(m_pointFixed[i]==true)
+		{
+			glVertex3f(m_pointCloud[i].v.x, m_pointCloud[i].v.y, m_pointCloud[i].v.z);
+		}
 	}
 	glEnd();
 }

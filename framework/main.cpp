@@ -16,11 +16,18 @@ float cameraDistance;
 AntTweakBarWrapper* g_config_bar;
 //------------Render State------------//
 bool g_show_wireframe = false;
+bool g_show_edgelist =false;
+bool g_show_fixedvertex = false;
+bool g_show_render = true;
+float g_linewidth = 0.1;
+float g_pointsize = 1;
 float position[]={5,5,5};
 float light_ambient[]={1,1,0,1};
 //------------Mesh--------------------//
 Mesh g_mesh;
-char *model1Path[3]={("../../data/models/surgical/asa3.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
+char *model1Path[3]={("../../data/models/surgical/rectum01.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
+//---------------
+SimulationMethod g_CurrentMethod = PositionBasedDynamic;
 void TurnOnLight()
 {
 	glEnable(GL_LIGHTING);
@@ -38,6 +45,7 @@ void init_opengl()
     g_config_bar->ChangeTwBarWindowSize(g_screen_width, g_screen_height);
 	g_config_bar->Reset();
 	g_mesh.LoadModel(model1Path[0],NULL,0);
+	//g_mesh.GenerateEdgeList();
 	TurnOnLight();
 }
 void applyTransform()
@@ -82,7 +90,9 @@ void display()
 	else
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glutSolidTeapot(1);
-	g_mesh.RenderFP();
+	//g_mesh.RenderFP();
+	//g_mesh.Degbug_Render();
+	g_mesh.Render();
 	releaseTransform();
 
 	g_config_bar->Draw();

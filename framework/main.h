@@ -32,6 +32,8 @@ typedef float ScalarType;
 #include "gtc\matrix_transform.hpp"
 #include<iostream>
 using namespace std;
+typedef enum { PositionBasedDynamic=1, MassSpring, FiniteElement, FastMassSpring, ProjectiveDynamic } SimulationMethod;
+#define NUM_SIMULATION 5
 
 struct VertexPoint
 {
@@ -39,4 +41,9 @@ struct VertexPoint
 	glm::vec3 nor;
 	glm::vec2 tex;
 };
+struct EdgeList
+{
+	int pa,pb;
+};
+
 #endif
