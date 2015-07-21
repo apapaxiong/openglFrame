@@ -4,7 +4,7 @@ void Simulation::Reset()
 {
 	m_inertia_y.resize(m_mesh->GetSystemDimension());
 	m_external_force.resize(m_mesh->GetSystemDimension());
-	m_gravity_constant=-90.98;
+	m_gravity_constant=0.098;
 	m_h=1.0f/30.0f;
 }
 void Simulation::calculateInertiaY()
@@ -40,8 +40,8 @@ void Simulation::integrateExplicitEuler()
     // update q_{n+1}
     ScalarType h_square = m_h*m_h;
     VectorX pos_next = m_inertia_y + h_square*m_mesh->m_inv_mass_matrix*force_previous;
-	cout<<"pos_next"<<pos_next.block_vector(0)<<endl;
-	cout<<"m_current"<<m_mesh->m_current_positions.block_vector(0)<<endl;
+	//cout<<"pos_next"<<pos_next.block_vector(0)<<endl;
+	//cout<<"m_current"<<m_mesh->m_current_positions.block_vector(0)<<endl;
     updatePosAndVel(pos_next);
 }
 void Simulation::computeForces(const VectorX& x, VectorX& force)

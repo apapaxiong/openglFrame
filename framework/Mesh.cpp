@@ -154,6 +154,58 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 //	CreateNeighborFaceNew();
 //	return true;
 }
+void Mesh::UpdateMeshData(int size)
+{
+	m_meshData.clear();
+	for(int i=0;i<size-2;i+=3)
+	{
+		//cout<<i<<endl;
+		int id=m_vertexIndex[i];
+		int id1=m_vertexIndex[i+1];
+		int id2=m_vertexIndex[i+2];
+		int nid=m_normalIndex[i];
+		int nid1=m_normalIndex[i+1];
+		int nid2=m_normalIndex[i+2];
+		int tid=m_texcoordIndex[i];
+		if(tid<0)
+			tid=1;
+		int tid1=m_texcoordIndex[i+1];
+		if(tid1<0)
+			tid1=1;
+		int tid2=m_texcoordIndex[i+2];
+		if(tid2<0)
+			tid2=1;
+		VertexPoint temp;
+		temp.v=m_vertex[id-1];
+		temp.nor=m_vertexNormal[nid-1];
+		temp.tex=m_vertexTexcoord[tid-1];
+
+		m_pointCloud[id-1].v=m_vertex[id-1];
+		m_pointCloud[id-1].nor=m_vertexNormal[nid-1];
+		m_pointCloud[id-1].tex=m_vertexTexcoord[tid-1];
+
+		m_meshData.push_back(temp);
+		temp.v=m_vertex[id1-1];
+		temp.nor=m_vertexNormal[nid1-1];
+		temp.tex=m_vertexTexcoord[tid1-1];
+
+		m_pointCloud[id1-1].v=m_vertex[id1-1];
+		m_pointCloud[id1-1].nor=m_vertexNormal[nid1-1];
+		m_pointCloud[id1-1].tex=m_vertexTexcoord[tid1-1];
+
+		m_meshData.push_back(temp);
+		temp.v=m_vertex[id2-1];
+		temp.nor=m_vertexNormal[nid2-1];
+		temp.tex=m_vertexTexcoord[tid2-1];
+
+		m_pointCloud[id2-1].v=m_vertex[id2-1];
+		m_pointCloud[id2-1].nor=m_vertexNormal[nid2-1];
+		m_pointCloud[id2-1].tex=m_vertexTexcoord[tid2-1];
+
+		m_meshData.push_back(temp);	
+	}
+	//cout<<"Mesh Size"<<meshdata.size()<<endl;
+}
 void Mesh::GenerateFixedConstraint()
 {
 	for(int i=0;i<m_pointCloud.size();i++)
@@ -224,11 +276,13 @@ void Mesh::Render()
 	for(int i=0;i<m_pointCloud.size();i++)
 	{
 		m_pointCloud[i].v= glm_vector3(m_current_positions[3*i+0], m_current_positions[3*i+1], m_current_positions[3*i+2]);
+		m_vertex[i]=m_pointCloud[i].v;
 	}
 	if(g_show_render)
 		RenderFP();
 
 	Degbug_Render();
+	UpdateMeshData(m_vertexIndex.size());
 }
 void Mesh::RenderFP()
 {

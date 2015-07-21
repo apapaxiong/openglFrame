@@ -14,6 +14,7 @@ public:
 	//----------Initialization-----------//
 	void GenerateEdgeList(); //Generate edge list of the mesh, no duplication
 	void GenerateFixedConstraint(); //Generate fixed constraint
+	void UpdateMeshData(int size);
 	//-------------Render---------------//
 	void RenderFP();  //Render Fixed Render Pipeline
 	void Render();  
