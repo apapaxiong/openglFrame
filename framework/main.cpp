@@ -25,9 +25,10 @@ float position[]={5,5,5};
 float light_ambient[]={1,1,0,1};
 //------------Mesh--------------------//
 Mesh g_mesh;
-char *model1Path[3]={("../../data/models/surgical/rectum01.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
+char *model1Path[3]={("../../data/models/surgical/bar.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
 //---------------
 SimulationMethod g_CurrentMethod = PositionBasedDynamic;
+Simulation g_simulation;
 void TurnOnLight()
 {
 	glEnable(GL_LIGHTING);
@@ -45,6 +46,8 @@ void init_opengl()
     g_config_bar->ChangeTwBarWindowSize(g_screen_width, g_screen_height);
 	g_config_bar->Reset();
 	g_mesh.LoadModel(model1Path[0],NULL,0);
+	g_simulation.SetMesh(&g_mesh);
+	g_simulation.Reset();
 	//g_mesh.GenerateEdgeList();
 	TurnOnLight();
 }
@@ -96,6 +99,7 @@ void display()
 	releaseTransform();
 
 	g_config_bar->Draw();
+	g_simulation.Update();
 	glutSwapBuffers();
 }
 void idle()

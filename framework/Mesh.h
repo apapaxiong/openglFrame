@@ -3,9 +3,11 @@
 #include"main.h"
 #include "GLM.h"
 #include "Math_Header.h"
+#include "Simulation.h"
 
 class Mesh
 {
+	friend class Simulation;
 public:
 	Mesh(){};
 	bool LoadModel(char* path,char* texfilename,int texid);
@@ -19,9 +21,12 @@ public:
 	void Degbug_Render();
 	void Debug_Render_EdgeList();
 	void Debug_Render_FixedVertex();
+	//--------------------Get Function--------------//
+	unsigned int GetSystemDimension(){return m_system_dimension;}
 
 	~Mesh(){};
-private:
+protected:
+	ScalarType m_total_mass;
 	GLMmodel* obj;
     unsigned int m_vertices_number; // m
     unsigned int m_system_dimension; // 3m

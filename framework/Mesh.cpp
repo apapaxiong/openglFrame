@@ -48,6 +48,7 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 	}
 	int numtri=obj->numtriangles;
 	m_pointCloud.resize(obj->numvertices);
+	m_total_mass=10;
 	for(int i=0;i<3*numtri-2;i+=3)
 	{
 		//cout<<i<<endl;
@@ -101,6 +102,35 @@ bool Mesh::LoadModel(char* path,char *texfilename,int texid)
 	{
 		m_pointCloud_ori[i]=m_pointCloud[i];
 	}
+	//------------------------Eigen Setup----------------------//
+	m_current_positions.resize(m_system_dimension);
+    m_current_velocities.resize(m_system_dimension);
+	m_mass_matrix.resize(m_system_dimension, m_system_dimension);
+    m_inv_mass_matrix.resize(m_system_dimension, m_system_dimension);
+    m_identity_matrix.resize(m_system_dimension, m_system_dimension);
+
+	m_current_positions.setZero();
+	for(int i=0;i<m_pointCloud.size();i++)
+	{
+		m_current_positions.block_vector(i)=EigenVector3(m_pointCloud[i].v.x, m_pointCloud[i].v.y, m_pointCloud[i].v.z);
+	}
+	m_current_velocities.setZero();
+	std::vector<SparseMatrixTriplet> i_triplets;
+    std::vector<SparseMatrixTriplet> m_triplets;
+    std::vector<SparseMatrixTriplet> m_inv_triplets;
+	i_triplets.clear();
+    m_triplets.clear();
+	float unit_mass=m_total_mass/m_pointCloud.size();
+    ScalarType inv_unit_mass = 1.0 / unit_mass;
+	for (int index = 0; index < m_system_dimension; index++)
+    {
+        i_triplets.push_back(SparseMatrixTriplet(index, index, 1));
+        m_triplets.push_back(SparseMatrixTriplet(index, index, unit_mass));
+        m_inv_triplets.push_back(SparseMatrixTriplet(index, index, inv_unit_mass));
+    }
+	m_mass_matrix.setFromTriplets(m_triplets.begin(), m_triplets.end());
+    m_inv_mass_matrix.setFromTriplets(m_inv_triplets.begin(), m_inv_triplets.end());
+    m_identity_matrix.setFromTriplets(i_triplets.begin(), i_triplets.end());
 
 	cout<<"Mesh Loading Finished"<<endl;
 	cout<<"Number of Vertices: "<<m_pointCloud.size()<<endl;
@@ -191,6 +221,10 @@ void Mesh::GenerateFixedConstraint()
 }
 void Mesh::Render()
 {
+	for(int i=0;i<m_pointCloud.size();i++)
+	{
+		m_pointCloud[i].v= glm_vector3(m_current_positions[3*i+0], m_current_positions[3*i+1], m_current_positions[3*i+2]);
+	}
 	if(g_show_render)
 		RenderFP();
 
