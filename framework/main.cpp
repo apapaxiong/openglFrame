@@ -2,6 +2,7 @@
 #include "OpenGL_Header.h"
 #include "UI_warpper.h"
 #include "Mesh.h"
+#include "fps.h"
 int g_screen_width = DEFAULT_SCREEN_WIDTH;
 int g_screen_height = DEFAULT_SCREEN_HEIGHT;
 //---------------Mouse----------------//
@@ -16,6 +17,7 @@ float cameraDistance;
 AntTweakBarWrapper* g_config_bar;
 //------------Render State------------//
 bool g_show_wireframe = false;
+bool g_start_simulation = false;
 bool g_show_edgelist =false;
 bool g_show_fixedvertex = false;
 bool g_show_render = true;
@@ -25,7 +27,13 @@ float position[]={5,5,5};
 float light_ambient[]={1,1,0,1};
 //------------Mesh--------------------//
 Mesh g_mesh;
-char *model1Path[3]={("../../data/models/surgical/bar.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
+//----------Frame Rate/Frame Number----------//
+mmc::FpsTracker g_fps_tracker;
+int g_max_fps = 30;
+int g_timestep = 1000 / g_max_fps;
+int g_current_frame = 0;
+
+char *model1Path[3]={("../../data/models/surgical/cloth.obj"),("../../data/models/surgical/attachment2.obj"),("../../data/models/surgical/fescia3.obj")}; //rectumnew
 //---------------
 SimulationMethod g_CurrentMethod = PositionBasedDynamic;
 Simulation g_simulation;
@@ -35,6 +43,33 @@ void TurnOnLight()
 	glLightfv(GL_LIGHT0,GL_POSITION,position);
 	glLightfv(GL_LIGHT0,GL_AMBIENT,light_ambient);
 	glEnable(GL_LIGHT0);
+}
+void timeout(int value)
+{
+    glutTimerFunc(g_timestep, timeout, g_timestep);
+    // keep track of time
+    g_fps_tracker.timestamp();
+
+    // ant tweak bar update
+  //  int atb_feed_back = g_config_bar->Update();
+   // if (atb_feed_back&ATB_RESHAPE_WINDOW)
+  //  {
+ //       glutReshapeWindow(g_screen_width, g_screen_height);
+ //   }
+ //   if (atb_feed_back&(ATB_CHANGE_STIFFNESS|ATB_CHANGE_TIME_STEP))
+//    {
+       // g_simulation->SetReprefactorFlag();
+ //   }
+
+    // simulation update
+    if (g_start_simulation) 
+    {
+        // update mesh
+        g_simulation.Update();
+        g_current_frame ++;
+    }
+
+    glutPostRedisplay();
 }
 void init_opengl()
 {
@@ -48,6 +83,7 @@ void init_opengl()
 	g_mesh.LoadModel(model1Path[0],NULL,0);
 	g_simulation.SetMesh(&g_mesh);
 	g_simulation.Reset();
+	g_simulation.SetupConstraints();
 	//g_mesh.GenerateEdgeList();
 	TurnOnLight();
 }
@@ -99,7 +135,9 @@ void display()
 	releaseTransform();
 
 	g_config_bar->Draw();
-	g_simulation.Update();
+
+	//if(g_start_simulation)
+	//    g_simulation.Update();
 	glutSwapBuffers();
 }
 void idle()
@@ -153,6 +191,7 @@ int main(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_DEPTH | GLUT_RGB);
 	glutCreateWindow("framework");
 	//glutFullScreen();
+	glutTimerFunc(g_timestep, timeout, g_timestep);
 	init_opengl();
 	glutDisplayFunc(display);
 	glutIdleFunc(idle);
