@@ -5,6 +5,7 @@ extern float cameraDistance;
 extern float g_linewidth;
 extern bool g_show_render;
 extern bool g_show_fixedvertex;
+extern bool g_start_simulation;
 extern float g_pointsize;
 extern SimulationMethod g_CurrentMethod;
 AntTweakBarWrapper::AntTweakBarWrapper()
@@ -24,6 +25,7 @@ void AntTweakBarWrapper::Init()
     sprintf(control_bar_pos_string, "'Control Panel' position='%d 10' color='255 255 0' ", DEFAULT_SCREEN_WIDTH-210);
     TwDefine(control_bar_pos_string);
 
+	TwAddVarRW(m_control_panel_bar, "Start Simulation", TwType(sizeof(bool)), &(g_start_simulation), " label='Start Simulation' key=s group='Debug Information' help='Toggle simulation mode.'");
 	TwAddVarRW(m_control_panel_bar, "Render FP", TwType(sizeof(bool)), &(g_show_render), " label='Render FP' key=w group='Debug Information' help='Toggle render display mode.'");
 	TwAddVarRW(m_control_panel_bar, "Wireframe", TwType(sizeof(bool)), &(g_show_wireframe), " label='Wireframe mode' key=w group='Debug Information' help='Toggle wireframe display mode.'");
 	TwAddVarRW(m_control_panel_bar, "Edge List", TwType(sizeof(bool)), &(g_show_edgelist), " label='Edgelist mode'  group='Debug Information' help='Toggle edgelist display mode.'");

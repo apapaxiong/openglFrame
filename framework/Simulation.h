@@ -4,6 +4,7 @@
 #include <vector>
 #include "main.h"
 #include "Mesh.h"
+#include "Constraint.h"
 class Mesh;
 
 class Simulation
@@ -20,6 +21,9 @@ public:
 	void computeForces(const VectorX& x, VectorX& force);
 	//----------Integration-----------//
 	void integrateExplicitEuler();
+	//----------Constraint------------//
+	void SetupConstraints();
+	void AddAttachmentConstraint(unsigned int vertex_index); // add one attachment constraint at vertex_index
 private:
 	ScalarType m_h; // time_step
 
@@ -35,5 +39,6 @@ private:
     // external force (gravity, wind, etc...)
     VectorX m_external_force;
 	Mesh *m_mesh;
+	std::vector<Constraint*> m_constraints;
 };
 #endif

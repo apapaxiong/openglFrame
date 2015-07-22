@@ -4,8 +4,10 @@ void Simulation::Reset()
 {
 	m_inertia_y.resize(m_mesh->GetSystemDimension());
 	m_external_force.resize(m_mesh->GetSystemDimension());
-	m_gravity_constant=0.098;
-	m_h=1.0f/30.0f;
+	m_gravity_constant = 100;
+	m_stiffness_attachment = 120;
+	m_stiffness_stretch = 80;
+	m_h = 0.0333;
 }
 void Simulation::calculateInertiaY()
 {
@@ -52,10 +54,10 @@ void Simulation::computeForces(const VectorX& x, VectorX& force)
     gradient.setZero();
 
     // springs
-  /*  for (std::vector<Constraint*>::iterator it = m_constraints.begin(); it != m_constraints.end(); ++it)
+    for (std::vector<Constraint*>::iterator it = m_constraints.begin(); it != m_constraints.end(); ++it)
     {
         (*it)->EvaluateGradient(x, gradient);
-    }*/
+    }
 
     // external forces
     gradient -= m_external_force;
@@ -72,4 +74,26 @@ void Simulation::Update()
 	calculateInertiaY();
 	calculateExternalForce();
 	integrateExplicitEuler();
+}
+void Simulation::SetupConstraints()
+{
+	AddAttachmentConstraint(0);
+	AddAttachmentConstraint(289);
+	AddAttachmentConstraint(85);
+	AddAttachmentConstraint(221);
+	for(int i=0;i<m_mesh->m_edgelist.size();i++)
+	{
+		int id1= m_mesh->m_edgelist[i].pa;
+		int id2= m_mesh->m_edgelist[i].pb;
+		EigenVector3 p1, p2;
+		p1 = m_mesh->m_current_positions.block_vector(id1);
+		p2 = m_mesh->m_current_positions.block_vector(id2);
+		SpringConstraint* c = new SpringConstraint(&m_stiffness_stretch, id1, id2, (p1-p2).norm());
+		m_constraints.push_back(c);
+	}
+}
+void Simulation::AddAttachmentConstraint(unsigned int vertex_index)
+{
+    AttachmentConstraint* ac = new AttachmentConstraint(&m_stiffness_attachment, vertex_index, m_mesh->m_current_positions.block_vector(vertex_index));
+    m_constraints.push_back(ac);
 }
